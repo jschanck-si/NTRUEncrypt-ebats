@@ -23,7 +23,7 @@
 
 int copyrightclaims(void)
 {
-    return 30;
+    return 0;
 }
 
 int patentclaims(void)
@@ -52,7 +52,10 @@ static uint8_t get_entropy(ENTROPY_CMD cmd, uint8_t *out)
     
     if (cmd == GET_BYTE_OF_ENTROPY) {
         if (index == sizeof(seed))
-            return 0;
+        {
+            randombytes(seed, sizeof(seed));
+            index = 0;
+        }
         
         *out = seed[index++];
         return 1;
@@ -63,8 +66,8 @@ static uint8_t get_entropy(ENTROPY_CMD cmd, uint8_t *out)
 int crypto_encrypt_keypair(uint8_t *pk, uint8_t *sk) {
     
     NTRU_ENCRYPT_PARAM_SET_ID param_set_id = EBATS_PARAM_SET_ID;
-    uint32_t pk_len = 0;
-    uint32_t sk_len = 0;
+    uint16_t pk_len = 0;
+    uint16_t sk_len = 0;
     DRBG_HANDLE drbg;
     
     if (!sk || !pk) {
@@ -92,14 +95,14 @@ int crypto_encrypt_keypair(uint8_t *pk, uint8_t *sk) {
 
 int shortciphertext(uint8_t *c, uint64_t *clen, const uint8_t *m, uint64_t mlen, const uint8_t *pk, uint64_t pklen) {
     
-    uint32_t ct_len = 0;
+    uint16_t ct_len = 0;
     DRBG_HANDLE drbg;
     
     if (!pk || !m || !c || !clen) {
         return -1;
     }
 
-    if ((pklen > 0xffffffff ) || (mlen > 0xffffffff)) {
+    if ((pklen > 0xffff ) || (mlen > 0xffff)) {
         return -2;
     }
     
@@ -107,11 +110,11 @@ int shortciphertext(uint8_t *c, uint64_t *clen, const uint8_t *m, uint64_t mlen,
         return -3;
     }
     
-    if (ntru_crypto_ntru_encrypt(drbg, pklen, pk, mlen, m, &ct_len, NULL) != NTRU_OK) {
+    if (ntru_crypto_ntru_encrypt(drbg, (uint16_t) pklen, pk, (uint16_t) mlen, m, &ct_len, NULL) != NTRU_OK) {
         return -4;
     }
     
-    if (ntru_crypto_ntru_encrypt(drbg, pklen, pk, mlen, m, &ct_len, c) != NTRU_OK) {
+    if (ntru_crypto_ntru_encrypt(drbg, (uint16_t) pklen, pk, (uint16_t) mlen, m, &ct_len, c) != NTRU_OK) {
         return -5;
     }
     
@@ -126,21 +129,21 @@ int shortciphertext(uint8_t *c, uint64_t *clen, const uint8_t *m, uint64_t mlen,
 
 int shortplaintext(uint8_t *m, uint64_t *mlen, const uint8_t *c, uint64_t clen, const uint8_t *sk, uint64_t sklen) {
     
-    uint32_t pt_len = 0;
+    uint16_t pt_len = 0;
     
     if (!sk || !c || !m || !mlen) {
         return -1;
     }
     
-    if ((sklen > 0xffffffff) || (clen > 0xffffffff)) {
+    if ((sklen > 0xffff) || (clen > 0xffff)) {
         return -2;
     }
     
-    if (ntru_crypto_ntru_decrypt((uint32_t) sklen, sk, clen, c, &pt_len, NULL) != NTRU_OK) {
+    if (ntru_crypto_ntru_decrypt((uint16_t) sklen, sk, (uint16_t) clen, c, &pt_len, NULL) != NTRU_OK) {
         return -3;
     }
     
-    if (ntru_crypto_ntru_decrypt((uint32_t) sklen, sk, clen, c, &pt_len, m) != NTRU_OK)
+    if (ntru_crypto_ntru_decrypt((uint16_t) sklen, sk, (uint16_t) clen, c, &pt_len, m) != NTRU_OK)
     {
         return -4;
     }
@@ -149,3 +152,4 @@ int shortplaintext(uint8_t *m, uint64_t *mlen, const uint8_t *c, uint64_t clen, 
     
     return 0;
 }
+
