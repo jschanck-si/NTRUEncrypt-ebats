@@ -9,6 +9,13 @@ UNAME := $(shell uname)
 vpath %.so $(LIBDIR)
 
 # Flags.
+
+ifeq ($(DEBUG), yes)
+CFLAGS?=-g
+else
+CFLAGS?=-O2 -funroll-loops -fomit-frame-pointer
+endif
+
 INCFLAGS = -I../include
 CFLAGS += -Wall -Wno-parentheses -Wshadow -fPIC $(INCFLAGS)
 
@@ -22,7 +29,7 @@ NTRUEncrypt_objs := $(addprefix $(OBJDIR)/, $(NTRUEncrypt_srcs:.c=.o))
 .PHONY : all NTRUEncrypt
 
 ifeq ($(UNAME), Darwin)
-NTRUEncrypt : libNTRUEncrypt.dynlib
+NTRUEncrypt : libNTRUEncrypt.dylib
 else
 NTRUEncrypt : libNTRUEncrypt.so
 endif
@@ -35,7 +42,7 @@ $(OBJDIR) $(LIBDIR) :
 # Ensure LIBDIR exists before building shared libraries in it.
 
 ifeq ($(UNAME), Darwin)
-libNTRUEncrypt.dynlib : $(NTRUEncrypt_objs) | $(LIBDIR)
+libNTRUEncrypt.dylib : $(NTRUEncrypt_objs) | $(LIBDIR)
 	$(CC) -fmessage-length=0 -fpic -shared -dynamiclib -o $(LIBDIR)/$@ $^
 else
 libNTRUEncrypt.so : $(NTRUEncrypt_objs) | $(LIBDIR)
@@ -73,7 +80,7 @@ cleanNTRUEncrypt :
 
 install:
 ifeq ($(UNAME), Darwin)
-	sudo cp $(LIBDIR)/libNTRUEncrypt.dynlib /usr/lib/
+	sudo cp $(LIBDIR)/libNTRUEncrypt.dylib /usr/lib/
 else
 	sudo cp $(LIBDIR)/libNTRUEncrypt.so /usr/lib/
 endif
