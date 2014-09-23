@@ -101,9 +101,10 @@ typedef uint8_t bool;
 
 
 /* Check architecture. TODO: make the build-system handle this */
-
+#if defined(__SSSE3__)
+  #define NTRUENVSSE3
 /* x86-64 */
-#if defined(__x86_64__) || defined(_M_X64)
+#elif defined(__x86_64__) || defined(_M_X64)
   #define NTRUENV64BIT
 /* i386 */
 #elif defined(__i386) || defined(_M_IX86)
